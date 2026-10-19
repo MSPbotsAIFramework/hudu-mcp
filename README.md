@@ -32,7 +32,7 @@ gets HTTP 400.
 
 ## Tools
 
-All tools return a JSON string. List tools take `page` and `page_size` (default 25, max 1000)
+All tools return a JSON string. List tools take `page` and `page_size` (default 25, max 200)
 and return `{count, page, has_more, next_page}`. **write** marks tools that change data;
 **confirm** marks deletes, which also need `confirm: true`.
 

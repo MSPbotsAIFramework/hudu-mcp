@@ -17,6 +17,7 @@ import asyncio
 import json
 
 import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 
 from hudu_mcp.api_client import HuduError
 from hudu_mcp.server import INSTRUCTIONS, create_mcp_server
@@ -113,6 +114,15 @@ def test_delete_tools_take_confirm(tools, name):
 @pytest.mark.parametrize("name", ["hudu_get_asset", "hudu_update_asset", "hudu_delete_asset", "hudu_archive_asset"])
 def test_asset_tools_accept_company_id(tools, name):
     assert "company_id" in tools[name].inputSchema["properties"]
+
+
+def test_page_size_is_capped_at_200(tools):
+    paged = [t for t in tools.values() if "page_size" in t.inputSchema["properties"]]
+    assert len(paged) == 11
+    for tool in paged:
+        assert tool.inputSchema["properties"]["page_size"]["anyOf"][0]["maximum"] == 200, tool.name
+    with pytest.raises(ToolError, match="less than or equal to 200"):
+        asyncio.run(create_mcp_server().call_tool("hudu_list_companies", {"page_size": 201}))
 
 
 def test_instructions_budget():

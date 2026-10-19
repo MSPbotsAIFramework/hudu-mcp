@@ -18,7 +18,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # REST API root under the Hudu instance URL.
 API_PATH = "/api/v1"
 DEFAULT_PAGE_SIZE = 25
-MAX_PAGE_SIZE = 1000
+MAX_PAGE_SIZE = 200
 
 
 class Settings(BaseSettings):
