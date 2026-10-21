@@ -124,6 +124,43 @@ async def test_websites_company_filter_is_applied_in_page(monkeypatch):
     assert "company_id" not in rec.requests[0].url.params
 
 
+async def test_website_url_is_sent_as_name(monkeypatch):
+    rec = Recorder({"POST websites": {"website": {"id": 5}}, "PUT websites/5": {"website": {"id": 5}}})
+    await _call(monkeypatch, rec, "hudu_create_website", {"url": "https://www.example.com", "company_id": 2})
+    await _call(monkeypatch, rec, "hudu_update_website", {"id": 5, "url": "https://www.example.org"})
+    assert body(rec.calls("websites", "POST")[0]) == {"website": {"name": "https://www.example.com", "company_id": 2}}
+    assert body(rec.calls("websites/5", "PUT")[0]) == {"website": {"name": "https://www.example.org"}}
+
+
+async def test_website_same_name_and_url_is_accepted(monkeypatch):
+    rec = Recorder({"POST websites": {"website": {"id": 5}}})
+    await _call(monkeypatch, rec, "hudu_create_website", {"name": "https://www.example.com", "url": " https://www.example.com "})
+    assert body(rec.requests[0]) == {"website": {"name": "https://www.example.com"}}
+
+
+@pytest.mark.parametrize(
+    "tool,args",
+    [
+        ("hudu_create_website", {"company_id": 2}),
+        ("hudu_create_website", {"name": "Example site", "company_id": 2}),
+    ],
+)
+async def test_website_missing_address_is_rejected(monkeypatch, tool, args):
+    rec = Recorder()
+    result = await _call(monkeypatch, rec, tool, args)
+    assert result["error"]["code"] == "invalid_argument"
+    assert rec.requests == []
+
+
+
+async def test_website_name_wins_and_label_falls_back_to_url(monkeypatch):
+    rec = Recorder()
+    await _call(monkeypatch, rec, "hudu_create_website", {"name": "https://www.example.com", "url": "https://www.example.org", "company_id": 2})
+    await _call(monkeypatch, rec, "hudu_create_website", {"name": "Example site", "url": "https://www.example.org", "company_id": 2})
+    sent = [json.loads(r.content)["website"]["name"] for r in rec.requests]
+    assert sent == ["https://www.example.com", "https://www.example.org"]
+
+
 # ---- records ---------------------------------------------------------------
 
 

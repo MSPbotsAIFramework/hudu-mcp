@@ -58,7 +58,7 @@ EXPECTED_TOOLS: dict[str, set[str]] = {
     "hudu_archive_article": ID,
     "hudu_list_websites": set(),
     "hudu_get_website": ID,
-    "hudu_create_website": {"name"},
+    "hudu_create_website": set(),
     "hudu_update_website": ID,
     "hudu_delete_website": ID,
     "hudu_list_folders": set(),

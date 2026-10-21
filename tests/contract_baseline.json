@@ -1,0 +1,444 @@
+{
+  "int_baseline": {
+    "hudu_test_connection": {
+      "params": [],
+      "required": []
+    },
+    "hudu_list_companies": {
+      "params": [
+        "page",
+        "page_size",
+        "name",
+        "id_number",
+        "website",
+        "phone_number",
+        "city",
+        "state",
+        "archived"
+      ],
+      "required": []
+    },
+    "hudu_get_company": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_company": {
+      "params": [
+        "name",
+        "nickname",
+        "company_type",
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "state",
+        "zip",
+        "country_name",
+        "phone_number",
+        "fax_number",
+        "website",
+        "id_number",
+        "notes",
+        "parent_company_id"
+      ],
+      "required": [
+        "name"
+      ]
+    },
+    "hudu_update_company": {
+      "params": [
+        "id",
+        "name",
+        "nickname",
+        "company_type",
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "state",
+        "zip",
+        "country_name",
+        "phone_number",
+        "fax_number",
+        "website",
+        "id_number",
+        "notes",
+        "parent_company_id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_delete_company": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_archive_company": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_unarchive_company": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_assets": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "asset_layout_id",
+        "name",
+        "primary_serial",
+        "archived"
+      ],
+      "required": []
+    },
+    "hudu_get_asset": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_asset": {
+      "params": [
+        "company_id",
+        "asset_layout_id",
+        "name",
+        "primary_serial",
+        "primary_model",
+        "primary_manufacturer",
+        "primary_mail",
+        "custom_fields"
+      ],
+      "required": [
+        "company_id",
+        "asset_layout_id",
+        "name"
+      ]
+    },
+    "hudu_update_asset": {
+      "params": [
+        "id",
+        "name",
+        "company_id",
+        "asset_layout_id",
+        "primary_serial",
+        "primary_model",
+        "primary_manufacturer",
+        "primary_mail",
+        "custom_fields"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_delete_asset": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_archive_asset": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_asset_layouts": {
+      "params": [
+        "page",
+        "page_size",
+        "name"
+      ],
+      "required": []
+    },
+    "hudu_get_asset_layout": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_asset_layout": {
+      "params": [
+        "name",
+        "icon",
+        "color",
+        "icon_color",
+        "include_passwords",
+        "include_photos",
+        "include_comments",
+        "include_files",
+        "active",
+        "fields"
+      ],
+      "required": [
+        "name"
+      ]
+    },
+    "hudu_update_asset_layout": {
+      "params": [
+        "id",
+        "name",
+        "icon",
+        "color",
+        "icon_color",
+        "include_passwords",
+        "include_photos",
+        "include_comments",
+        "include_files",
+        "active",
+        "fields"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_asset_passwords": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "name",
+        "search"
+      ],
+      "required": []
+    },
+    "hudu_get_asset_password": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_asset_password": {
+      "params": [
+        "company_id",
+        "name",
+        "username",
+        "password",
+        "otp_secret",
+        "url",
+        "password_type",
+        "description",
+        "passwordable_type",
+        "passwordable_id",
+        "in_portal",
+        "password_folder_id"
+      ],
+      "required": [
+        "company_id",
+        "name"
+      ]
+    },
+    "hudu_update_asset_password": {
+      "params": [
+        "id",
+        "name",
+        "username",
+        "password",
+        "otp_secret",
+        "url",
+        "password_type",
+        "description"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_delete_asset_password": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_articles": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "name",
+        "draft"
+      ],
+      "required": []
+    },
+    "hudu_get_article": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_article": {
+      "params": [
+        "name",
+        "content",
+        "folder_id",
+        "company_id",
+        "enable_sharing",
+        "draft"
+      ],
+      "required": [
+        "name"
+      ]
+    },
+    "hudu_update_article": {
+      "params": [
+        "id",
+        "name",
+        "content",
+        "folder_id",
+        "company_id",
+        "enable_sharing",
+        "draft"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_delete_article": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_archive_article": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_websites": {
+      "params": [
+        "page",
+        "page_size",
+        "name",
+        "company_id"
+      ],
+      "required": []
+    },
+    "hudu_get_website": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_create_website": {
+      "params": [
+        "name",
+        "url",
+        "notes",
+        "paused",
+        "company_id",
+        "disable_dns",
+        "disable_ssl",
+        "disable_whois"
+      ],
+      "required": [
+        "name"
+      ]
+    },
+    "hudu_update_website": {
+      "params": [
+        "id",
+        "name",
+        "url",
+        "notes",
+        "paused",
+        "company_id",
+        "disable_dns",
+        "disable_ssl",
+        "disable_whois"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_delete_website": {
+      "params": [
+        "id"
+      ],
+      "required": [
+        "id"
+      ]
+    },
+    "hudu_list_folders": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "name"
+      ],
+      "required": []
+    },
+    "hudu_list_procedures": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "name"
+      ],
+      "required": []
+    },
+    "hudu_list_activity_logs": {
+      "params": [
+        "page",
+        "page_size",
+        "user_id",
+        "user_email",
+        "resource_id",
+        "resource_type",
+        "action_message",
+        "start_date"
+      ],
+      "required": []
+    },
+    "hudu_list_relations": {
+      "params": [
+        "page",
+        "page_size"
+      ],
+      "required": []
+    },
+    "hudu_list_magic_dash": {
+      "params": [
+        "page",
+        "page_size",
+        "company_id",
+        "title"
+      ],
+      "required": []
+    }
+  }
+}

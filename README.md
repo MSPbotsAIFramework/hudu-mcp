@@ -44,7 +44,7 @@ and return `{count, page, has_more, next_page}`. **write** marks tools that chan
 | Asset layouts | `hudu_list_asset_layouts` (name), `hudu_get_asset_layout` (**id**); **write**: `hudu_create_asset_layout` (**name**, fields), `hudu_update_asset_layout` (**id**) |
 | Passwords | `hudu_list_asset_passwords` (company_id, name, search; secrets hidden), `hudu_get_asset_password` (**id**; secret in clear text); **write**: `hudu_create_asset_password` (**company_id**, **name**), `hudu_update_asset_password` (**id**); **confirm**: `hudu_delete_asset_password` (**id**) |
 | Articles | `hudu_list_articles` (company_id, name, draft), `hudu_get_article` (**id**); **write**: `hudu_create_article` (**name**), `hudu_update_article` (**id**), `hudu_archive_article` (**id**); **confirm**: `hudu_delete_article` (**id**) |
-| Websites | `hudu_list_websites` (name, company_id), `hudu_get_website` (**id**); **write**: `hudu_create_website` (**name** = the URL), `hudu_update_website` (**id**); **confirm**: `hudu_delete_website` (**id**) |
+| Websites | `hudu_list_websites` (name, company_id), `hudu_get_website` (**id**); **write**: `hudu_create_website` (name = the URL, or its alias url), `hudu_update_website` (**id**; name or url); **confirm**: `hudu_delete_website` (**id**) |
 | Other | `hudu_list_folders`, `hudu_list_procedures`, `hudu_list_activity_logs` (user, resource, action, start_date), `hudu_list_relations`, `hudu_list_magic_dash` (company_id, title) |
 
 Errors come back as a JSON envelope instead of an exception:
@@ -114,8 +114,9 @@ uv run pytest
   are masked too.
 - **Deletes need confirmation.** The five delete tools take `confirm: true` and otherwise
   return a "not done" result; archiving is the reversible alternative.
-- **Websites.** Hudu stores the website address as its `name`; the old `url` parameter, which
-  the API ignores, was dropped. The websites list has no server-side company filter, so
+- **Websites.** Hudu stores the website address as its `name` (the API has no `url` field).
+  `url` is accepted as an alias and sent as `name`; passing both with different values is
+  rejected as `invalid_argument`. The websites list has no server-side company filter, so
   `company_id` filters the returned page.
 - **Request bodies** are wrapped in the resource name Hudu expects (`{"company": {...}}`,
   `{"asset": {...}}`, ...).

@@ -49,6 +49,23 @@ def _website_name(value: str) -> str:
     return text
 
 
+def _is_address(value: str | None) -> bool:
+    return bool(value) and value.strip().lower().startswith(("http://", "https://"))
+
+
+def _address(name: str | None, url: str | None) -> str | None:
+    """Hudu has no url field: the address is the website's name, and url is an alias for it.
+
+    name wins when it is an address (earlier versions sent name and dropped url); url is
+    used when name is missing or is only a label.
+    """
+    value = name if _is_address(name) or not url else url
+    return _website_name(value) if value else None
+
+
+Url = Annotated[str | None, Field(description="Alias for name (Hudu stores the address as the name); used when name is not an address.", min_length=8)]
+
+
 def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def hudu_list_websites(
@@ -81,7 +98,8 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
 
     @mcp.tool(annotations=WRITES)
     async def hudu_create_website(
-        name: Annotated[str, Field(description="Website address, e.g. https://www.example.com.", min_length=8)],
+        name: Annotated[str | None, Field(description="Website address, e.g. https://www.example.com. Required unless url is given.", min_length=8)] = None,
+        url: Url = None,
         notes: Text = None,
         paused: Annotated[bool | None, Field(description="Create with monitoring paused.")] = None,
         company_id: OptionalId = None,
@@ -92,9 +110,12 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
         """Start monitoring a website for a company. Only when the user explicitly asks."""
 
         async def action(client: HuduClient) -> Any:
+            address = _address(name, url)
+            if address is None:
+                raise ValueError("Pass name (or its alias url): the website address.")
             body = compact(
                 {
-                    "name": _website_name(name),
+                    "name": address,
                     "notes": notes,
                     "paused": paused,
                     "company_id": company_id,
@@ -111,6 +132,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_update_website(
         id: RecordId,
         name: Annotated[str | None, Field(description="New website address.")] = None,
+        url: Url = None,
         notes: Text = None,
         paused: Annotated[bool | None, Field(description="Pause or resume monitoring.")] = None,
         company_id: OptionalId = None,
@@ -124,7 +146,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
             body = require(
                 compact(
                     {
-                        "name": _website_name(name) if name else None,
+                        "name": _address(name, url),
                         "notes": notes,
                         "paused": paused,
                         "company_id": company_id,
