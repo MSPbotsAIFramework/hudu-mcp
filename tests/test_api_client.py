@@ -293,3 +293,31 @@ async def test_connection_check(monkeypatch):
     rec = Recorder({"api_info": {"version": "2.46.0"}})
     result = await _call(monkeypatch, rec, "hudu_test_connection", {})
     assert result == {"connected": True, "instance": "https://docs.example.com", "api_info": {"version": "2.46.0"}}
+
+
+# ---- size cap never skips records (PRD-20956) --------------------------------
+
+_LONG_ASSETS = [{"id": i, "name": f"asset-{i}", "fields": [{"label": "notes", "value": "x" * 4800}]} for i in range(1, 48)]
+_WIDE_ASSETS = [{"id": i, "name": f"asset-{i}", "fields": [{"label": f"field-{j}", "value": "v" * 60} for j in range(60)]} for i in range(1, 48)]
+
+
+@pytest.mark.parametrize("assets", [_LONG_ASSETS, _WIDE_ASSETS], ids=["long-field", "many-fields"])
+async def test_paging_large_assets_returns_every_record_once(monkeypatch, assets):
+    def route(request):
+        page = int(request.url.params.get("page", 1))
+        size = int(request.url.params.get("page_size", 25))
+        return httpx.Response(200, json={"assets": assets[(page - 1) * size : page * size]})
+
+    seen, args = [], {}
+    for _ in range(50):
+        out = await _call(monkeypatch, Recorder({"assets": route}), "hudu_list_assets", args)
+        ids = [a["id"] for a in out["assets"]]
+        assert out["count"] == len(ids)
+        seen += ids
+        if out.get("next_page"):
+            args = {**args, "page": out["next_page"]}
+        elif out.get("retry_page_size") and "page_size" not in args:
+            args, seen = {"page_size": out["retry_page_size"]}, []
+        else:
+            break
+    assert seen == list(range(1, 48))
