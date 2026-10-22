@@ -43,6 +43,10 @@ OptionalId = Annotated[int | None, Field(description="Numeric Hudu id.", ge=1)]
 CompanyFilter = Annotated[int | None, Field(description="Only records of this company id.", ge=1)]
 Page = Annotated[int | None, Field(description="Page number, from 1 (default 1).", ge=1)]
 PageSize = Annotated[int | None, Field(description=f"Records per page (default {DEFAULT_PAGE_SIZE}, max {MAX_PAGE_SIZE}).", ge=1, le=MAX_PAGE_SIZE)]
+Offset = Annotated[
+    int | None,
+    Field(description="Record position to start from (0-based, overrides page); pass next_offset from the previous result.", ge=0),
+]
 Text = Annotated[str | None, Field(description="Value.")]
 Confirm = Annotated[bool | None, Field(description="Must be true, set only after the user approved this exact deletion.")]
 
@@ -58,15 +62,49 @@ def unwrap(payload: Any, key: str) -> Any:
     return payload
 
 
-async def list_page(client: HuduClient, path: str, key: str, params: dict[str, Any], page: int | None, page_size: int | None) -> dict:
-    """GET a list endpoint and return {<key>, count, page, has_more, next_page}."""
+def locate(offset: int | None, page: int | None, page_size: int | None) -> tuple[int, int, int]:
+    """(page, page_size, start) for a read from record ``start``.
+
+    Hudu pages by number only, so a position is reached by asking for the page that
+    holds it (same page size) and skipping the records before it.
+    """
     size = page_size or DEFAULT_PAGE_SIZE
-    number = page or 1
+    start = offset if offset is not None else ((page or 1) - 1) * size
+    return start // size + 1, size, start
+
+
+async def list_page(
+    client: HuduClient,
+    path: str,
+    key: str,
+    params: dict[str, Any],
+    page: int | None,
+    page_size: int | None,
+    offset: int | None = None,
+) -> dict:
+    """GET a list endpoint and return {<key>, count, page, has_more, next_page, offset, next_offset}.
+
+    next_offset continues right after the last record returned, also when the result is cut
+    to fit the size limit (a page number cannot: the rest of a cut page is on no other page).
+    """
+    number, size, start = locate(offset, page, page_size)
     payload = await client.get(path, compact(params) | {"page": number, "page_size": size})
     items = payload.get(key) if isinstance(payload, dict) else payload
     items = items if isinstance(items, list) else []
     more = len(items) >= size
-    return compact({key: items, "count": len(items), "page": number, "has_more": more, "next_page": number + 1 if more else None})
+    items = items[start - (number - 1) * size :]
+    return compact(
+        {
+            key: items,
+            "count": len(items),
+            "page": number,
+            "has_more": more,
+            "next_page": number + 1 if more else None,
+            "offset": start,
+            "next_offset": start + len(items) if more else None,
+            "_resume": {"key": "next_offset", "start": start},
+        }
+    )
 
 
 def require(body: dict) -> dict:

@@ -31,6 +31,7 @@ from ._common import (
     ClientFactory,
     CompanyFilter,
     Confirm,
+    Offset,
     OptionalId,
     Page,
     PageSize,
@@ -63,6 +64,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_asset_passwords(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         company_id: CompanyFilter = None,
         name: Annotated[str | None, Field(description="Exact password entry name.")] = None,
         search: Annotated[str | None, Field(description="Text in the name, username or URL.")] = None,
@@ -74,7 +76,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
 
         async def action(client: HuduClient) -> dict:
             params = {"company_id": company_id, "name": name, "search": search}
-            result = await list_page(client, "asset_passwords", "asset_passwords", params, page, page_size)
+            result = await list_page(client, "asset_passwords", "asset_passwords", params, page, page_size, offset)
             result["asset_passwords"] = [mask(p) for p in result.get("asset_passwords", [])]
             return result
 

@@ -26,6 +26,7 @@ from ._common import (
     WRITES_IDEMPOTENT,
     ClientFactory,
     Confirm,
+    Offset,
     OptionalId,
     Page,
     PageSize,
@@ -71,18 +72,21 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_websites(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         name: Annotated[str | None, Field(description="Exact website address.")] = None,
         company_id: Annotated[int | None, Field(description="Only this company's websites (filtered within the page).", ge=1)] = None,
     ) -> str:
         """List monitored websites with status, company, and DNS / SSL / WHOIS monitoring state."""
 
         async def action(client: HuduClient) -> dict:
-            result = await list_page(client, "websites", "websites", {"name": name}, page, page_size)
+            result = await list_page(client, "websites", "websites", {"name": name}, page, page_size, offset)
             if company_id is not None:
                 # The websites endpoint has no company filter; apply it to the page.
                 result["websites"] = [w for w in result.get("websites", []) if isinstance(w, dict) and w.get("company_id") == company_id]
                 result["count"] = len(result["websites"])
                 result["company_filtered_in_page"] = True
+                # next_offset still counts unfiltered records; a cut filtered list has no exact position.
+                result.pop("_resume", None)
             return result
 
         return await run_tool("hudu_list_websites", client_factory, action)

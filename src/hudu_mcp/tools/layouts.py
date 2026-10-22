@@ -24,6 +24,7 @@ from ._common import (
     WRITES,
     WRITES_IDEMPOTENT,
     ClientFactory,
+    Offset,
     Page,
     PageSize,
     RecordId,
@@ -51,12 +52,13 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_asset_layouts(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         name: Annotated[str | None, Field(description="Exact layout name.")] = None,
     ) -> str:
         """List asset layouts (asset types such as Servers or Firewalls) with their field definitions."""
 
         async def action(client: HuduClient) -> dict:
-            return await list_page(client, "asset_layouts", "asset_layouts", {"name": name}, page, page_size)
+            return await list_page(client, "asset_layouts", "asset_layouts", {"name": name}, page, page_size, offset)
 
         return await run_tool("hudu_list_asset_layouts", client_factory, action)
 

@@ -31,6 +31,7 @@ from ._common import (
     ClientFactory,
     CompanyFilter,
     Confirm,
+    Offset,
     OptionalId,
     Page,
     PageSize,
@@ -72,6 +73,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_assets(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         company_id: CompanyFilter = None,
         asset_layout_id: Annotated[int | None, Field(description="Only assets of this layout (e.g. Servers).", ge=1)] = None,
         name: Annotated[str | None, Field(description="Exact asset name.")] = None,
@@ -88,7 +90,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
                 "primary_serial": primary_serial,
                 "archived": archived,
             }
-            return await list_page(client, "assets", "assets", params, page, page_size)
+            return await list_page(client, "assets", "assets", params, page, page_size, offset)
 
         return await run_tool("hudu_list_assets", client_factory, action)
 

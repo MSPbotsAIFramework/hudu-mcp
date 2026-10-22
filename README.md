@@ -33,7 +33,9 @@ gets HTTP 400.
 ## Tools
 
 All tools return a JSON string. List tools take `page` and `page_size` (default 25, max 200)
-and return `{count, page, has_more, next_page}`. **write** marks tools that change data;
+and return `{count, page, has_more, next_page, offset, next_offset}`. They also take `offset`
+(a 0-based record position that overrides `page`): pass `next_offset` to continue, because when a
+page is cut to fit the response size limit the rest of it is on no other page number. **write** marks tools that change data;
 **confirm** marks deletes, which also need `confirm: true`.
 
 | Area | Tools |

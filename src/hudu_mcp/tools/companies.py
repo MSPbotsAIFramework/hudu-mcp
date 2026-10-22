@@ -26,6 +26,7 @@ from ._common import (
     WRITES_IDEMPOTENT,
     ClientFactory,
     Confirm,
+    Offset,
     OptionalId,
     Page,
     PageSize,
@@ -49,6 +50,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_companies(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         name: Annotated[str | None, Field(description="Exact company name.")] = None,
         id_number: Annotated[str | None, Field(description="Company id number (e.g. the PSA id).")] = None,
         website: Text = None,
@@ -69,7 +71,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
                 "state": state,
                 "archived": archived,
             }
-            return await list_page(client, "companies", "companies", params, page, page_size)
+            return await list_page(client, "companies", "companies", params, page, page_size, offset)
 
         return await run_tool("hudu_list_companies", client_factory, action)
 

@@ -321,3 +321,111 @@ async def test_paging_large_assets_returns_every_record_once(monkeypatch, assets
         else:
             break
     assert seen == list(range(1, 48))
+
+
+# ---- Page-number paging that survives truncation (offset / next_offset) -----------------------------
+# Self-test checklist: a cut page continues right after the last record returned (from page 1 and
+# from a later page); offset aligned / not aligned to a page; offset 0; offset past the end; offset
+# wins over page; page-only calls send the same request as before; no retry hint for a page size.
+
+TOTAL = 137
+ROWS = [{"id": i, "name": f"Row {i}", **{f"f{k}": f"value {k}" for k in range(40)}} for i in range(TOTAL)]
+SMALL = [{"id": i} for i in range(TOTAL)]
+
+PAGED_TOOLS = [
+    ("hudu_list_companies", "companies"),
+    ("hudu_list_assets", "assets"),
+    ("hudu_list_asset_layouts", "asset_layouts"),
+    ("hudu_list_asset_passwords", "asset_passwords"),
+    ("hudu_list_articles", "articles"),
+    ("hudu_list_websites", "websites"),
+    ("hudu_list_folders", "folders"),
+    ("hudu_list_procedures", "procedures"),
+    ("hudu_list_activity_logs", "activity_logs"),
+    ("hudu_list_relations", "relations"),
+    ("hudu_list_magic_dash", "magic_dash"),
+]
+
+
+def _paged_api(path, rows):
+    """Pages by page / page_size like Hudu, under the {<path>: [...]} wrapper."""
+
+    def reply(request):
+        number, size = int(request.url.params["page"]), int(request.url.params["page_size"])
+        return httpx.Response(200, json={path: rows[(number - 1) * size : number * size]})
+
+    return Recorder({path: reply})
+
+
+def _sent(rec):
+    params = rec.requests[0].url.params
+    return int(params["page"]), int(params["page_size"])
+
+
+async def _walk(monkeypatch, rec, tool, key, args):
+    ids, calls, cut = [], 0, 0
+    while True:
+        result = await _call(monkeypatch, rec, tool, args)
+        calls += 1
+        assert "retry_page_size" not in result, result.get("note")
+        cut += bool(result.get("truncated"))
+        ids += [r["id"] for r in result[key]]
+        if result.get("next_offset") is None:
+            return ids, cut
+        args = {k: v for k, v in args.items() if k != "page"} | {"offset": result["next_offset"]}
+        assert calls < 200
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+async def test_cut_pages_continue_without_gaps_from_page_1(monkeypatch, tool, key):
+    ids, cut = await _walk(monkeypatch, _paged_api(key, ROWS), tool, key, {"page_size": 50})
+    assert cut > 0  # pages really were cut
+    assert ids == [r["id"] for r in ROWS]  # no gaps, no duplicates
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+async def test_cut_pages_continue_without_gaps_from_a_later_page(monkeypatch, tool, key):
+    ids, cut = await _walk(monkeypatch, _paged_api(key, ROWS), tool, key, {"page": 3, "page_size": 40})
+    assert cut > 0
+    assert ids == [r["id"] for r in ROWS[80:]]
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+@pytest.mark.parametrize("offset,size,page,first", [(30, 25, 2, 30), (50, 25, 3, 50), (0, 25, 1, 0), (7, None, 1, 7)])
+async def test_offset_reads_the_page_that_holds_it(monkeypatch, tool, key, offset, size, page, first):
+    rec = _paged_api(key, SMALL)
+    result = await _call(monkeypatch, rec, tool, {"offset": offset} | ({"page_size": size} if size else {}))
+    size = size or 25  # DEFAULT_PAGE_SIZE
+    assert _sent(rec) == (page, size)
+    assert result[key][0]["id"] == first and result["offset"] == offset
+    assert result["next_offset"] == page * size  # rest of the page returned, next page starts after it
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+async def test_offset_past_the_end_is_empty(monkeypatch, tool, key):
+    result = await _call(monkeypatch, _paged_api(key, SMALL), tool, {"offset": 500, "page_size": 25})
+    assert (result["count"], result["has_more"], result.get("next_offset")) == (0, False, None)
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+async def test_offset_wins_over_page(monkeypatch, tool, key):
+    rec = _paged_api(key, SMALL)
+    result = await _call(monkeypatch, rec, tool, {"offset": 10, "page": 4, "page_size": 10})
+    assert _sent(rec) == (2, 10) and result[key][0]["id"] == 10
+
+
+@pytest.mark.parametrize("tool,key", PAGED_TOOLS)
+async def test_page_only_sends_the_same_request_as_before(monkeypatch, tool, key):
+    rec = _paged_api(key, SMALL)
+    result = await _call(monkeypatch, rec, tool, {"page": 2, "page_size": 25})
+    assert set(rec.requests[0].url.params) == {"page", "page_size"} and _sent(rec) == (2, 25)
+    assert [r["id"] for r in result[key]] == list(range(25, 50))
+    assert (result["page"], result["next_page"], result["has_more"]) == (2, 3, True)
+    assert (result["offset"], result["next_offset"]) == (25, 50)
+
+
+async def test_websites_company_filter_keeps_an_unfiltered_next_offset(monkeypatch):
+    rows = [{"id": i, "company_id": 7 if i % 3 == 0 else 8} for i in range(TOTAL)]
+    result = await _call(monkeypatch, _paged_api("websites", rows), "hudu_list_websites", {"company_id": 7, "offset": 30, "page_size": 25})
+    assert [w["id"] for w in result["websites"]] == [30, 33, 36, 39, 42, 45, 48]
+    assert result["next_offset"] == 50  # counts every record of the page, not only the filtered ones

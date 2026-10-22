@@ -27,6 +27,7 @@ from ._common import (
     ClientFactory,
     CompanyFilter,
     Confirm,
+    Offset,
     OptionalId,
     Page,
     PageSize,
@@ -49,6 +50,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
     async def hudu_list_articles(
         page: Page = None,
         page_size: PageSize = None,
+        offset: Offset = None,
         company_id: CompanyFilter = None,
         name: Annotated[str | None, Field(description="Exact article title.")] = None,
         draft: Annotated[bool | None, Field(description="true for drafts only, false for published only.")] = None,
@@ -57,7 +59,7 @@ def register(mcp: FastMCP, client_factory: ClientFactory) -> None:
 
         async def action(client: HuduClient) -> dict:
             params = {"company_id": company_id, "name": name, "draft": draft}
-            return await list_page(client, "articles", "articles", params, page, page_size)
+            return await list_page(client, "articles", "articles", params, page, page_size, offset)
 
         return await run_tool("hudu_list_articles", client_factory, action)
 
